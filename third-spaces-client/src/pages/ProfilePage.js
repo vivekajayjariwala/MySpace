@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Tab } from '@headlessui/react';
 import { useAuth } from '../context/AuthContext';
@@ -43,13 +43,7 @@ export default function ProfilePage() {
         }
     }, [user]);
 
-    useEffect(() => {
-        if (user) {
-            fetchFriendsAndRequests();
-        }
-    }, [user]);
-
-    const fetchFriendsAndRequests = async () => {
+    const fetchFriendsAndRequests = useCallback(async () => {
         try {
             const token = localStorage.getItem('token');
             const url = `${config.api.baseUrl}${config.api.endpoints.users}/${user._id}`;
@@ -62,7 +56,13 @@ export default function ProfilePage() {
         } catch (err) {
             console.error('Error fetching friends:', err);
         }
-    };
+    }, [user]);
+
+    useEffect(() => {
+        if (user) {
+            fetchFriendsAndRequests();
+        }
+    }, [user, fetchFriendsAndRequests]);
 
     const handleAcceptFriend = async (friendId) => {
         try {
@@ -93,21 +93,7 @@ export default function ProfilePage() {
         }
     };
 
-    const handleImageUpload = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            if (file.size > 5 * 1024 * 1024) {
-                setError('Image size should be less than 5MB');
-                return;
-            }
-            const reader = new FileReader();
-            reader.onloadend = () => {
-                setImagePreview(reader.result);
-                setProfilePicture(reader.result);
-            };
-            reader.readAsDataURL(file);
-        }
-    };
+
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -117,7 +103,7 @@ export default function ProfilePage() {
         try {
             const token = localStorage.getItem('token');
             const url = `${config.api.baseUrl}${config.api.endpoints.users}/profile`;
-            const { data } = await axios.put(url, {
+            await axios.put(url, {
                 firstName,
                 lastName,
                 bio,
@@ -152,7 +138,7 @@ export default function ProfilePage() {
     if (!user) return <div className="p-8 text-center">Please log in to view this page.</div>;
 
     return (
-        <div className="min-h-screen bg-dashboard-bg py-12 px-4 sm:px-6 lg:px-8">
+        <div className="flex-grow py-12 px-4 sm:px-6 lg:px-8">
             <div className="max-w-4xl mx-auto">
                 <div className="bg-white rounded-3xl shadow-xl ring-1 ring-black/5 overflow-hidden">
                     <div className="px-8 py-10">

@@ -60,7 +60,6 @@ router.post('/:id/join', auth, async (req, res) => {
         }
 
         event.participants.push(req.user._id);
-        event.participants.push(req.user._id);
         await event.save();
         await event.populate('creator', 'firstName lastName username profilePicture');
 

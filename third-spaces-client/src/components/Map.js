@@ -1,18 +1,44 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Map, { Marker, Popup, NavigationControl, GeolocateControl } from 'react-map-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { MapPinIcon } from '@heroicons/react/24/solid';
 
 import config from '../config/config';
 
-export default function MapComponent({ events, onMapClick, onJoinEvent, onLeaveEvent, user, tempMarker }) {
+export default function MapComponent({ events, onMapClick, onJoinEvent, onLeaveEvent, user, tempMarker, focusedEvent }) {
+    const navigate = useNavigate();
     const [viewState, setViewState] = useState({
         latitude: 51.505,
         longitude: -0.09,
         zoom: 13
     });
     const [selectedEvent, setSelectedEvent] = useState(null);
+
+    // Sync selectedEvent with events prop to reflect changes immediately
+    useEffect(() => {
+        if (selectedEvent) {
+            const updatedEvent = events.find(e => e._id === selectedEvent._id);
+            if (updatedEvent) {
+                setSelectedEvent(updatedEvent);
+            }
+        }
+    }, [events, selectedEvent]);
+
+    // Handle focusedEvent changes
+    useEffect(() => {
+        if (focusedEvent) {
+            setViewState(prev => ({
+                ...prev,
+                latitude: focusedEvent.location.lat,
+                longitude: focusedEvent.location.lng,
+                zoom: 15,
+                transitionDuration: 1000
+            }));
+            setSelectedEvent(focusedEvent);
+        }
+    }, [focusedEvent]);
 
 
     // Get user location on mount
@@ -107,7 +133,13 @@ export default function MapComponent({ events, onMapClick, onJoinEvent, onLeaveE
                                 <h3 className="font-bold text-xl leading-tight text-gray-900 pr-6">{selectedEvent.title}</h3>
                                 <p className="text-xs font-bold text-green-600 uppercase tracking-wider mt-1.5">{selectedEvent.type}</p>
                                 {selectedEvent.creator && (
-                                    <div className="flex items-center gap-1.5 mt-2">
+                                    <div
+                                        className="flex items-center gap-1.5 mt-2 cursor-pointer hover:bg-gray-100 rounded-lg p-1 -ml-1 transition-colors"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            navigate(`/profile/${selectedEvent.creator._id}`);
+                                        }}
+                                    >
                                         <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center text-[10px] font-bold text-green-700 overflow-hidden ring-1 ring-white shadow-sm">
                                             {selectedEvent.creator.profilePicture ? (
                                                 <img src={selectedEvent.creator.profilePicture} alt={selectedEvent.creator.firstName} className="w-full h-full object-cover" />
@@ -115,7 +147,7 @@ export default function MapComponent({ events, onMapClick, onJoinEvent, onLeaveE
                                                 `${selectedEvent.creator.firstName[0]}${selectedEvent.creator.lastName[0]}`
                                             )}
                                         </div>
-                                        <span className="text-xs text-gray-500 truncate">by {selectedEvent.creator.firstName} {selectedEvent.creator.lastName}</span>
+                                        <span className="text-xs text-gray-500 truncate hover:text-green-600 transition-colors">by {selectedEvent.creator.firstName} {selectedEvent.creator.lastName}</span>
                                     </div>
                                 )}
                             </div>
@@ -165,11 +197,14 @@ export default function MapComponent({ events, onMapClick, onJoinEvent, onLeaveE
 
                                 {(() => {
                                     const isParticipant = user && selectedEvent.participants.some(p => p._id === user._id || p === user._id);
-                                    const isCreator = user && (selectedEvent.creator._id === user._id || selectedEvent.creator === user._id);
+                                    const isCreator = user && (
+                                        (selectedEvent.creator._id && selectedEvent.creator._id.toString() === user._id.toString()) ||
+                                        (selectedEvent.creator.toString() === user._id.toString())
+                                    );
 
                                     return (
                                         <div className="flex gap-2">
-                                            {user && !isParticipant && (
+                                            {user && !isParticipant && !isCreator && (
                                                 <button
                                                     onClick={() => onJoinEvent(selectedEvent._id)}
                                                     className="text-sm bg-green-600 text-white px-4 py-1.5 rounded-full hover:bg-green-500 font-semibold shadow-sm hover:shadow transition-all"

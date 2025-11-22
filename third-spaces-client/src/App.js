@@ -26,7 +26,7 @@ function App() {
   return (
     <AuthProvider>
       <Router>
-        <div className="h-screen flex flex-col">
+        <div className="min-h-screen flex flex-col bg-dashboard-bg">
           <Navbar />
           <Routes>
             <Route path="/" element={

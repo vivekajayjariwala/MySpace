@@ -12,6 +12,7 @@ export default function MapPage() {
     const [isCreating, setIsCreating] = useState(false);
     const [newEventLocation, setNewEventLocation] = useState(null);
     const [editingEvent, setEditingEvent] = useState(null);
+    const [focusedEvent, setFocusedEvent] = useState(null);
     const { user } = useAuth();
 
     useEffect(() => {
@@ -85,12 +86,7 @@ export default function MapPage() {
     };
 
     const handlePanelEventClick = (event) => {
-        // We can pass a selected event to the map to fly to it or open popup
-        // For now, let's just fly to it if we had a ref, or we can update map view state
-        // Since Map is controlled, we might need to lift viewState up or expose a method
-        // But for simplicity, let's just rely on the user finding it or maybe we can set a "focusedEvent" state
-        // that the Map component listens to.
-        // Let's add a prop to Map to focus on an event.
+        setFocusedEvent(event);
     };
 
     const handleJoinEvent = async (eventId) => {
@@ -145,6 +141,7 @@ export default function MapPage() {
                     onLeaveEvent={handleLeaveEvent}
                     user={user}
                     tempMarker={newEventLocation}
+                    focusedEvent={focusedEvent}
                 />
 
                 {user && (
