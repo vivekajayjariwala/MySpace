@@ -30,7 +30,9 @@ router.post('/', auth, async (req, res) => {
             location,
             participantsLimit,
             creator: req.user._id,
-            participants: [req.user._id] // Creator automatically joins
+            participantsLimit,
+            creator: req.user._id,
+            participants: [] // Creator does not automatically join
         });
 
         const savedEvent = await newEvent.save();
@@ -58,7 +60,9 @@ router.post('/:id/join', auth, async (req, res) => {
         }
 
         event.participants.push(req.user._id);
+        event.participants.push(req.user._id);
         await event.save();
+        await event.populate('creator', 'firstName lastName username profilePicture');
 
         res.json(event);
     } catch (err) {
@@ -89,6 +93,7 @@ router.post('/:id/leave', auth, async (req, res) => {
         );
 
         await event.save();
+        await event.populate('creator', 'firstName lastName username profilePicture');
 
         res.json(event);
     } catch (err) {
@@ -122,6 +127,7 @@ router.put('/:id', auth, async (req, res) => {
         event.participantsLimit = participantsLimit || event.participantsLimit;
 
         const updatedEvent = await event.save();
+        await updatedEvent.populate('creator', 'firstName lastName username profilePicture');
         res.json(updatedEvent);
     } catch (err) {
         res.status(500).json({ message: err.message });

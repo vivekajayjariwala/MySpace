@@ -7,17 +7,19 @@ function classNames(...classes) {
     return classes.filter(Boolean).join(' ')
 }
 
-export default function EventsPanel({ events, userEvents, onEventClick, onEditEvent, onDeleteEvent, userLocation }) {
+export default function EventsPanel({ events, userEvents, onEventClick, onEditEvent, onDeleteEvent, userLocation, user }) {
     const navigate = useNavigate();
     const [isOpen, setIsOpen] = useState(true);
 
     // Sort events by distance if userLocation is available
-    const sortedEvents = [...events].sort((a, b) => {
-        if (!userLocation) return 0;
-        const distA = Math.sqrt(Math.pow(a.location.lat - userLocation.lat, 2) + Math.pow(a.location.lng - userLocation.lng, 2));
-        const distB = Math.sqrt(Math.pow(b.location.lat - userLocation.lat, 2) + Math.pow(b.location.lng - userLocation.lng, 2));
-        return distA - distB;
-    });
+    const sortedEvents = [...events]
+        .filter(event => !user || (event.creator._id !== user._id && event.creator !== user._id))
+        .sort((a, b) => {
+            if (!userLocation) return 0;
+            const distA = Math.sqrt(Math.pow(a.location.lat - userLocation.lat, 2) + Math.pow(a.location.lng - userLocation.lng, 2));
+            const distB = Math.sqrt(Math.pow(b.location.lat - userLocation.lat, 2) + Math.pow(b.location.lng - userLocation.lng, 2));
+            return distA - distB;
+        });
 
     return (
         <div className={`absolute left-4 top-4 bottom-4 transition-all duration-300 z-[1000] flex ${isOpen ? 'w-80' : 'w-0'}`}>

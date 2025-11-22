@@ -103,9 +103,21 @@ export default function MapComponent({ events, onMapClick, onJoinEvent, onLeaveE
                             <div className="text-4xl bg-white p-3 rounded-2xl shadow-sm ring-1 ring-black/5">
                                 {selectedEvent.emoji || '📍'}
                             </div>
-                            <div className="flex-1 pt-1">
-                                <h3 className="font-bold text-xl leading-tight text-gray-900">{selectedEvent.title}</h3>
+                            <div className="flex-1 pt-1 min-w-0">
+                                <h3 className="font-bold text-xl leading-tight text-gray-900 pr-6">{selectedEvent.title}</h3>
                                 <p className="text-xs font-bold text-green-600 uppercase tracking-wider mt-1.5">{selectedEvent.type}</p>
+                                {selectedEvent.creator && (
+                                    <div className="flex items-center gap-1.5 mt-2">
+                                        <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center text-[10px] font-bold text-green-700 overflow-hidden ring-1 ring-white shadow-sm">
+                                            {selectedEvent.creator.profilePicture ? (
+                                                <img src={selectedEvent.creator.profilePicture} alt={selectedEvent.creator.firstName} className="w-full h-full object-cover" />
+                                            ) : (
+                                                `${selectedEvent.creator.firstName[0]}${selectedEvent.creator.lastName[0]}`
+                                            )}
+                                        </div>
+                                        <span className="text-xs text-gray-500 truncate">by {selectedEvent.creator.firstName} {selectedEvent.creator.lastName}</span>
+                                    </div>
+                                )}
                             </div>
                             <button
                                 onClick={(e) => {

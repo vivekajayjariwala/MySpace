@@ -135,6 +135,7 @@ export default function MapPage() {
                     onEditEvent={handleEditEvent}
                     onDeleteEvent={handleDeleteEvent}
                     userLocation={null}
+                    user={user}
                 />
 
                 <Map
