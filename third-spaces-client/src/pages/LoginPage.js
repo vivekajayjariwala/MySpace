@@ -89,7 +89,7 @@ export default function LoginPage() {
                         <p className="text-green-700">Email verified successfully! You can now log in.</p>
                     </div>
                 )}
-                <h2 className="text-balance text-4xl font-semibold tracking-tight text-gray-900 sm:text-5xl">Log in to Conventus</h2>
+                <h2 className="text-balance text-4xl font-semibold tracking-tight text-gray-900 sm:text-5xl">Log in to MySpace</h2>
                 <p className="mt-4 text-lg/8 text-gray-600">Enter your account details.</p>
             </div>
             <form onSubmit={handleSubmit} className="mx-auto mt-20 max-w-xl sm:mt-24">

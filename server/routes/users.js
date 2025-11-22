@@ -1,36 +1,36 @@
 const router = require('express').Router();
-const {User, validate} = require('../models/User');
+const { User, validate } = require('../models/User');
 const bcrypt = require("bcrypt");
 const crypto = require('crypto');
 const auth = require('../middleware/auth');
 
-router.post("/", async(req,res)=> {
+router.post("/", async (req, res) => {
     try {
         console.log('Received registration request:', {
             ...req.body,
-            password: '[HIDDEN]' 
+            password: '[HIDDEN]'
         });
 
-        const {error} = validate(req.body);
+        const { error } = validate(req.body);
         if (error) {
             console.log('Validation error:', error.details[0].message);
-            return res.status(400).send({message: error.details[0].message});
+            return res.status(400).send({ message: error.details[0].message });
         }
-        
-        const user = await User.findOne({email: req.body.email})
+
+        const user = await User.findOne({ email: req.body.email })
         if (user) {
             console.log('Duplicate email found:', req.body.email);
-            return res.status(409).send({message: "User with given email already exists."})
+            return res.status(409).send({ message: "User with given email already exists." })
         }
 
         const salt = await bcrypt.genSalt(Number(process.env.SALT));
         const hashPassword = await bcrypt.hash(req.body.password, salt);
 
         const verificationToken = crypto.randomBytes(32).toString('hex');
-        const verificationTokenExpires = new Date(Date.now() + 24*60*60*1000); // 24 hours
+        const verificationTokenExpires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
 
         const newUser = await new User({
-            ...req.body, 
+            ...req.body,
             password: hashPassword,
             verificationToken,
             verificationTokenExpires,
@@ -43,7 +43,7 @@ router.post("/", async(req,res)=> {
 
         // Create verification URL
         const verificationUrl = `http://localhost:3000/api/users/verify/${verificationToken}`;
-        
+
         // Instead of sending email, return the verification URL to the client
         res.status(201).send({
             message: "User created successfully. Please verify your email.",
@@ -51,15 +51,15 @@ router.post("/", async(req,res)=> {
         });
     } catch (error) {
         console.error('Server error during registration:', error);
-        res.status(500).send({message: "Internal Server Error", details: error.message})
+        res.status(500).send({ message: "Internal Server Error", details: error.message })
     }
 })
 
 // Add new route for verification
-router.get("/verify/:token", async(req, res) => {
+router.get("/verify/:token", async (req, res) => {
     try {
         console.log('Verification attempt for token:', req.params.token);
-        
+
         const user = await User.findOne({
             verificationToken: req.params.token,
             verificationTokenExpires: { $gt: Date.now() }
@@ -73,13 +73,13 @@ router.get("/verify/:token", async(req, res) => {
         }
 
         console.log('User found, verifying:', user.email);
-        
+
         // Update user verification status
         await User.findByIdAndUpdate(user._id, {
             isVerified: true,
-            $unset: { 
-                verificationToken: 1, 
-                verificationTokenExpires: 1 
+            $unset: {
+                verificationToken: 1,
+                verificationTokenExpires: 1
             }
         });
 
@@ -97,7 +97,7 @@ router.get("/verify/:token", async(req, res) => {
 router.post("/change-password", auth, async (req, res) => {
     try {
         const { currentPassword, newPassword } = req.body;
-        
+
         // Find user by ID (from auth middleware)
         const user = await User.findById(req.user._id);
         if (!user) {
@@ -120,6 +120,28 @@ router.post("/change-password", auth, async (req, res) => {
         res.status(200).send({ message: "Password updated successfully" });
     } catch (error) {
         console.error('Password change error:', error);
+        res.status(500).send({ message: "Internal Server Error" });
+    }
+});
+
+// Update user profile
+router.put("/profile", auth, async (req, res) => {
+    try {
+        const { firstName, lastName } = req.body;
+
+        const user = await User.findByIdAndUpdate(
+            req.user._id,
+            { firstName, lastName },
+            { new: true }
+        ).select('-password -verificationToken -verificationTokenExpires');
+
+        if (!user) {
+            return res.status(404).send({ message: "User not found" });
+        }
+
+        res.send(user);
+    } catch (error) {
+        console.error('Profile update error:', error);
         res.status(500).send({ message: "Internal Server Error" });
     }
 });
@@ -148,7 +170,7 @@ router.put("/:userId/toggle/:property", auth, async (req, res) => {
         }
 
         const { userId, property } = req.params;
-        
+
         // Only allow toggling isAdmin and isDisabled
         if (property !== 'isAdmin' && property !== 'isDisabled') {
             return res.status(400).send({ message: "Invalid property" });

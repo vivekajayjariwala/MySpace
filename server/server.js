@@ -8,6 +8,7 @@ const config = require('./config/config');
 const userRoutes = require('./routes/users')
 const authRoutes = require('./routes/auth')
 const eventRoutes = require('./routes/events')
+const socialRoutes = require('./routes/social')
 
 // middlewares
 app.use(express.json());
@@ -19,6 +20,7 @@ app.use(cors({
 app.use('/api/users', userRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/events', eventRoutes);
+app.use('/api/social', socialRoutes);
 
 // Serving frontend code
 const path = require('path');

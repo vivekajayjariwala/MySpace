@@ -12,12 +12,12 @@ export default function Navbar() {
     const { user, logout } = useAuth()
     const location = useLocation()
 
-    const navigation = [
-        { name: user ? 'Map' : 'Home', href: user ? '/map' : '/', current: location.pathname === (user ? '/map' : '/') },
-    ]
+    const navigation = user
+        ? [{ name: 'Map', href: '/map', current: location.pathname === '/map' }]
+        : [];
 
     return (
-        <Disclosure as="nav" className="bg-white shadow">
+        <Disclosure as="nav" className="bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-50 border-b border-gray-100">
             {({ open }) => (
                 <>
                     <div className="mx-auto max-w-7xl px-2 sm:px-6 lg:px-8">
@@ -36,7 +36,7 @@ export default function Navbar() {
                             </div>
                             <div className="flex flex-1 items-center justify-center sm:items-stretch sm:justify-start">
                                 <div className="flex flex-shrink-0 items-center">
-                                    <Link to={user ? "/map" : "/"} className="text-xl font-bold text-green-600">Conventus</Link>
+                                    <Link to={user ? "/map" : "/"} className="text-xl font-bold text-green-600">MySpace</Link>
                                 </div>
                                 <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
                                     {navigation.map((item) => (
@@ -78,6 +78,19 @@ export default function Navbar() {
                                             leaveTo="transform opacity-0 scale-95"
                                         >
                                             <Menu.Items className="absolute right-0 z-10 mt-2 w-48 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none">
+                                                <Menu.Item>
+                                                    {({ active }) => (
+                                                        <Link
+                                                            to="/profile"
+                                                            className={classNames(
+                                                                active ? 'bg-gray-100' : '',
+                                                                'block px-4 py-2 text-sm text-gray-700'
+                                                            )}
+                                                        >
+                                                            Your Profile
+                                                        </Link>
+                                                    )}
+                                                </Menu.Item>
                                                 <Menu.Item>
                                                     {({ active }) => (
                                                         <button

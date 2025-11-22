@@ -17,10 +17,13 @@ export function AuthProvider({ children }) {
         if (token) {
             try {
                 const decoded = jwtDecode(token);
+                console.log('Decoded token:', decoded);
                 setUser({
                     email: decoded.email,
                     isAdmin: decoded.isAdmin,
-                    _id: decoded._id
+                    _id: decoded._id,
+                    firstName: decoded.firstName,
+                    lastName: decoded.lastName
                 });
             } catch (error) {
                 console.error('Error decoding token:', error);
@@ -36,7 +39,9 @@ export function AuthProvider({ children }) {
         setUser({
             email: decoded.email,
             isAdmin: decoded.isAdmin,
-            _id: decoded._id
+            _id: decoded._id,
+            firstName: decoded.firstName,
+            lastName: decoded.lastName
         });
     };
 

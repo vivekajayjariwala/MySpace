@@ -63,7 +63,7 @@ export default function RegisterPage() {
         <div className="isolate bg-white px-8 py-28 sm:py-36 lg:px-10">
             <div className="mx-auto max-w-2xl text-center">
                 <h2 className="text-balance text-4xl font-semibold tracking-tight text-gray-900 sm:text-5xl">Register an account</h2>
-                <p className="mt-4 text-lg/8 text-gray-600">Fill out the form below to register for Conventus.</p>
+                <p className="mt-4 text-lg/8 text-gray-600">Fill out the form below to register for MySpace.</p>
             </div>
             <form onSubmit={handleSubmit} className="mx-auto mt-20 max-w-xl sm:mt-24">
                 <div className="grid grid-cols-1 gap-x-8 gap-y-8 sm:grid-cols-2">

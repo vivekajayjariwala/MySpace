@@ -4,16 +4,16 @@ import Map, { Marker, Popup, NavigationControl, GeolocateControl } from 'react-m
 import 'mapbox-gl/dist/mapbox-gl.css';
 import { MapPinIcon } from '@heroicons/react/24/solid';
 
-const MAPBOX_TOKEN = "pk.eyJ1Ijoidml2ZWtqYXJpd2FsYXdlc3Rlcm4iLCJhIjoiY21pOXg2cXQ4MHIyMTJsb2c5N2hlOWdwaSJ9.yrWeJXJKMZQaSnfOq0XAqw";
+import config from '../config/config';
 
-export default function MapComponent({ events, onMapClick, onJoinEvent, onLeaveEvent, user }) {
+export default function MapComponent({ events, onMapClick, onJoinEvent, onLeaveEvent, user, tempMarker }) {
     const [viewState, setViewState] = useState({
         latitude: 51.505,
         longitude: -0.09,
         zoom: 13
     });
     const [selectedEvent, setSelectedEvent] = useState(null);
-    const [tempMarker, setTempMarker] = useState(null);
+
 
     // Get user location on mount
     useEffect(() => {
@@ -34,7 +34,7 @@ export default function MapComponent({ events, onMapClick, onJoinEvent, onLeaveE
 
     const handleMapClick = useCallback((event) => {
         const { lng, lat } = event.lngLat;
-        setTempMarker({ lng, lat });
+
         onMapClick({ lat, lng }); // Adapt to match previous interface
         setSelectedEvent(null); // Close popup if open
     }, [onMapClick]);
@@ -45,7 +45,7 @@ export default function MapComponent({ events, onMapClick, onJoinEvent, onLeaveE
             onMove={evt => setViewState(evt.viewState)}
             style={{ width: '100%', height: '100%' }}
             mapStyle="mapbox://styles/mapbox/streets-v11"
-            mapboxAccessToken={MAPBOX_TOKEN}
+            mapboxAccessToken={config.mapboxToken}
             onClick={handleMapClick}
         >
             <GeolocateControl position="top-left" />
@@ -64,7 +64,7 @@ export default function MapComponent({ events, onMapClick, onJoinEvent, onLeaveE
                         onClick={e => {
                             e.originalEvent.stopPropagation();
                             setSelectedEvent(event);
-                            setTempMarker(null);
+
                         }}
                     >
                         <div className="cursor-pointer hover:scale-110 transition-transform drop-shadow-md text-3xl">
@@ -97,22 +97,22 @@ export default function MapComponent({ events, onMapClick, onJoinEvent, onLeaveE
                     className="custom-event-popup z-50"
                     maxWidth="300px"
                 >
-                    <div className="p-0 rounded-2xl overflow-hidden bg-white shadow-lg border border-gray-100">
+                    <div className="p-0 rounded-3xl overflow-hidden bg-white shadow-2xl ring-1 ring-black/5">
                         {/* Header with Emoji and Title */}
-                        <div className="bg-green-50 p-4 pr-10 flex items-start gap-3 border-b border-green-100 relative">
-                            <div className="text-4xl bg-white p-2 rounded-xl shadow-sm">
+                        <div className="bg-gray-50/80 p-5 pr-10 flex items-start gap-4 border-b border-gray-100 relative backdrop-blur-sm">
+                            <div className="text-4xl bg-white p-3 rounded-2xl shadow-sm ring-1 ring-black/5">
                                 {selectedEvent.emoji || '📍'}
                             </div>
                             <div className="flex-1 pt-1">
-                                <h3 className="font-bold text-lg leading-tight text-gray-900">{selectedEvent.title}</h3>
-                                <p className="text-xs font-medium text-green-700 uppercase tracking-wide mt-1">{selectedEvent.type}</p>
+                                <h3 className="font-bold text-xl leading-tight text-gray-900">{selectedEvent.title}</h3>
+                                <p className="text-xs font-bold text-green-600 uppercase tracking-wider mt-1.5">{selectedEvent.type}</p>
                             </div>
                             <button
                                 onClick={(e) => {
                                     e.stopPropagation();
                                     setSelectedEvent(null);
                                 }}
-                                className="absolute top-2 right-2 text-gray-400 hover:text-gray-600 p-1 rounded-full hover:bg-white/50 transition-colors"
+                                className="absolute top-3 right-3 text-gray-400 hover:text-gray-600 p-2 rounded-full hover:bg-white shadow-sm hover:shadow transition-all"
                             >
                                 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" className="w-5 h-5">
                                     <path d="M6.28 5.22a.75.75 0 00-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 101.06 1.06L10 11.06l3.72 3.72a.75.75 0 101.06-1.06L11.06 10l3.72-3.72a.75.75 0 00-1.06-1.06L10 8.94 6.28 5.22z" />

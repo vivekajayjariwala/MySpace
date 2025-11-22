@@ -6,7 +6,8 @@ const config = {
             users: '/api/users',
             events: '/api/events'
         }
-    }
+    },
+    mapboxToken: "pk.eyJ1Ijoidml2ZWtqYXJpd2FsYXdlc3Rlcm4iLCJhIjoiY21pOXg2cXQ4MHIyMTJsb2c5N2hlOWdwaSJ9.yrWeJXJKMZQaSnfOq0XAqw"
 };
 
 export default config;

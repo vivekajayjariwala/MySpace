@@ -1,7 +1,11 @@
-import React, { Fragment, useState } from 'react';
+import React, { Fragment, useState, useEffect } from 'react';
 import { Dialog, Transition, Listbox } from '@headlessui/react';
-import { XMarkIcon, ChevronUpDownIcon, CheckIcon } from '@heroicons/react/24/outline';
+import { XMarkIcon, ChevronUpDownIcon, CheckIcon, MapPinIcon, UserPlusIcon, UserMinusIcon, PaperAirplaneIcon, TrashIcon } from '@heroicons/react/24/outline';
 import EmojiPicker from 'emoji-picker-react';
+import { searchAddress, reverseGeocode } from '../utils/geocoding';
+import axios from 'axios';
+import config from '../config/config';
+import { useAuth } from '../context/AuthContext';
 
 const TYPE_OPTIONS = [
     { name: 'Activity', emoji: '🏃' },
@@ -12,16 +16,121 @@ const TYPE_OPTIONS = [
     { name: 'Custom', emoji: '✨' },
 ];
 
-export default function EventModal({ isOpen, onClose, location, onSubmit }) {
+export default function EventModal({ isOpen, onClose, location, onLocationChange, onSubmit, initialData }) {
+    const { user } = useAuth();
     const [title, setTitle] = useState('');
     const [selectedType, setSelectedType] = useState(TYPE_OPTIONS[0]);
     const [customType, setCustomType] = useState('');
     const [emoji, setEmoji] = useState('📍');
     const [showEmojiPicker, setShowEmojiPicker] = useState(false);
     const [address, setAddress] = useState('');
+    const [suggestions, setSuggestions] = useState([]);
+    const [showSuggestions, setShowSuggestions] = useState(false);
     const [description, setDescription] = useState('');
     const [time, setTime] = useState('');
     const [participantsLimit, setParticipantsLimit] = useState('');
+
+    // Social State
+    const [comments, setComments] = useState([]);
+    const [newComment, setNewComment] = useState('');
+    const [isFollowing, setIsFollowing] = useState(false);
+    const [creator, setCreator] = useState(null);
+
+    useEffect(() => {
+        if (initialData) {
+            setTitle(initialData.title);
+            const typeOption = TYPE_OPTIONS.find(t => t.name === initialData.type) || { name: 'Custom', emoji: '✨' };
+            setSelectedType(typeOption);
+            if (typeOption.name === 'Custom') setCustomType(initialData.type);
+            setEmoji(initialData.emoji);
+            setAddress(initialData.address || '');
+            setDescription(initialData.description || '');
+            setTime(new Date(initialData.time).toISOString().slice(0, 16));
+            setParticipantsLimit(initialData.participantsLimit || '');
+            setComments(initialData.comments || []);
+            setCreator(initialData.creator);
+
+            // Check if following
+            if (user && initialData.creator && initialData.creator._id !== user._id) {
+                // Ideally we should check user.following list, but we might need to fetch fresh user data
+                // For now, let's assume user.following is populated
+                setIsFollowing(user.following && user.following.includes(initialData.creator._id));
+            }
+        } else {
+            resetForm();
+        }
+    }, [initialData, isOpen, user]);
+
+    const handleFollow = async () => {
+        try {
+            const token = localStorage.getItem('token');
+            const url = `${config.api.baseUrl}/api/social/${isFollowing ? 'unfollow' : 'follow'}/${creator._id}`;
+            await axios.post(url, {}, { headers: { 'x-auth-token': token } });
+            setIsFollowing(!isFollowing);
+        } catch (error) {
+            console.error('Error toggling follow:', error);
+        }
+    };
+
+    const handleAddComment = async (e) => {
+        e.preventDefault();
+        if (!newComment.trim()) return;
+        try {
+            const token = localStorage.getItem('token');
+            const url = `${config.api.baseUrl}/api/social/events/${initialData._id}/comment`;
+            const { data } = await axios.post(url, { text: newComment }, { headers: { 'x-auth-token': token } });
+            setComments([...comments, data]);
+            setNewComment('');
+        } catch (error) {
+            console.error('Error adding comment:', error);
+        }
+    };
+
+    const handleDeleteComment = async (commentId) => {
+        try {
+            const token = localStorage.getItem('token');
+            const url = `${config.api.baseUrl}/api/social/events/${initialData._id}/comment/${commentId}`;
+            await axios.delete(url, { headers: { 'x-auth-token': token } });
+            setComments(comments.filter(c => c._id !== commentId));
+        } catch (error) {
+            console.error('Error deleting comment:', error);
+        }
+    };
+
+    // Reverse geocode when location changes (e.g. from map click)
+    React.useEffect(() => {
+        const getAddress = async () => {
+            if (location) {
+                const addr = await reverseGeocode(location.lat, location.lng);
+                if (addr) {
+                    setAddress(addr);
+                }
+            }
+        };
+        getAddress();
+    }, [location]);
+
+    const handleAddressChange = async (e) => {
+        const value = e.target.value;
+        setAddress(value);
+        if (value.length > 2) {
+            const results = await searchAddress(value);
+            setSuggestions(results);
+            setShowSuggestions(true);
+        } else {
+            setSuggestions([]);
+            setShowSuggestions(false);
+        }
+    };
+
+    const handleSuggestionClick = (suggestion) => {
+        setAddress(suggestion.place_name);
+        setSuggestions([]);
+        setShowSuggestions(false);
+
+        const [lng, lat] = suggestion.center;
+        onLocationChange({ lat, lng });
+    };
 
     const handleSubmit = (e) => {
         e.preventDefault();
@@ -97,7 +206,7 @@ export default function EventModal({ isOpen, onClose, location, onSubmit }) {
                                 <div className="sm:flex sm:items-start">
                                     <div className="mt-3 text-center sm:mt-0 sm:text-left w-full">
                                         <Dialog.Title as="h3" className="text-2xl font-semibold leading-6 text-gray-900 mb-6">
-                                            Create New Event
+                                            {initialData ? 'Edit Event' : 'Create New Event'}
                                         </Dialog.Title>
 
                                         <form onSubmit={handleSubmit} className="space-y-5">
@@ -200,14 +309,32 @@ export default function EventModal({ isOpen, onClose, location, onSubmit }) {
                                             )}
 
                                             {/* Address */}
-                                            <div>
+                                            <div className="relative">
                                                 <input
                                                     type="text"
+                                                    required
                                                     className="block w-full rounded-xl border-0 py-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-green-600 sm:text-sm sm:leading-6"
-                                                    placeholder="Address / Location Name (Optional)"
+                                                    placeholder="Address / Location Name"
                                                     value={address}
-                                                    onChange={(e) => setAddress(e.target.value)}
+                                                    onChange={handleAddressChange}
+                                                    onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
                                                 />
+                                                {showSuggestions && suggestions.length > 0 && (
+                                                    <div className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
+                                                        {suggestions.map((suggestion) => (
+                                                            <div
+                                                                key={suggestion.id}
+                                                                className="cursor-pointer select-none py-2 pl-3 pr-9 hover:bg-green-50 text-gray-900"
+                                                                onClick={() => handleSuggestionClick(suggestion)}
+                                                            >
+                                                                <div className="flex items-center">
+                                                                    <MapPinIcon className="h-5 w-5 text-gray-400 mr-2" />
+                                                                    <span className="block truncate">{suggestion.place_name}</span>
+                                                                </div>
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                )}
                                             </div>
 
                                             {/* Time */}
@@ -250,7 +377,7 @@ export default function EventModal({ isOpen, onClose, location, onSubmit }) {
                                                     type="submit"
                                                     className="inline-flex w-full justify-center rounded-xl bg-green-600 px-3 py-3 text-sm font-semibold text-white shadow-sm hover:bg-green-500 sm:ml-3 sm:w-auto"
                                                 >
-                                                    Create Event
+                                                    {initialData ? 'Update Event' : 'Create Event'}
                                                 </button>
                                                 <button
                                                     type="button"
@@ -261,6 +388,80 @@ export default function EventModal({ isOpen, onClose, location, onSubmit }) {
                                                 </button>
                                             </div>
                                         </form>
+
+                                        {/* Comments Section (Only in Edit Mode) */}
+                                        {initialData && (
+                                            <div className="mt-8 border-t border-gray-200 pt-6">
+                                                <div className="flex items-center justify-between mb-4">
+                                                    <h4 className="text-lg font-semibold text-gray-900">Comments</h4>
+                                                    {creator && user && creator._id !== user._id && (
+                                                        <button
+                                                            onClick={handleFollow}
+                                                            className={`flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium transition-colors ${isFollowing
+                                                                ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                                                : 'bg-green-50 text-green-700 hover:bg-green-100'
+                                                                }`}
+                                                        >
+                                                            {isFollowing ? (
+                                                                <>
+                                                                    <UserMinusIcon className="h-3 w-3" /> Unfollow Host
+                                                                </>
+                                                            ) : (
+                                                                <>
+                                                                    <UserPlusIcon className="h-3 w-3" /> Follow Host
+                                                                </>
+                                                            )}
+                                                        </button>
+                                                    )}
+                                                </div>
+
+                                                <div className="space-y-4 mb-4 max-h-60 overflow-y-auto">
+                                                    {comments.map((comment) => (
+                                                        <div key={comment._id} className="bg-gray-50 p-3 rounded-lg">
+                                                            <div className="flex justify-between items-start">
+                                                                <span className="text-xs font-semibold text-gray-900">
+                                                                    {comment.user.firstName} {comment.user.lastName}
+                                                                </span>
+                                                                <span className="text-xs text-gray-500">
+                                                                    {new Date(comment.createdAt).toLocaleDateString()}
+                                                                </span>
+                                                            </div>
+                                                            <p className="text-sm text-gray-700 mt-1">{comment.text}</p>
+                                                            {(user && (user._id === comment.user._id || user._id === comment.user)) && (
+                                                                <button
+                                                                    onClick={() => handleDeleteComment(comment._id)}
+                                                                    className="text-xs text-red-500 hover:text-red-700 mt-1"
+                                                                >
+                                                                    Delete
+                                                                </button>
+                                                            )}
+                                                        </div>
+                                                    ))}
+                                                    {comments.length === 0 && (
+                                                        <p className="text-sm text-gray-500 text-center italic">No comments yet.</p>
+                                                    )}
+                                                </div>
+
+                                                {user && (
+                                                    <form onSubmit={handleAddComment} className="flex gap-2">
+                                                        <input
+                                                            type="text"
+                                                            value={newComment}
+                                                            onChange={(e) => setNewComment(e.target.value)}
+                                                            placeholder="Add a comment..."
+                                                            className="block w-full rounded-lg border-0 py-2 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-green-600 sm:text-sm sm:leading-6"
+                                                        />
+                                                        <button
+                                                            type="submit"
+                                                            disabled={!newComment.trim()}
+                                                            className="rounded-lg bg-green-600 p-2 text-white shadow-sm hover:bg-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                                                        >
+                                                            <PaperAirplaneIcon className="h-5 w-5" />
+                                                        </button>
+                                                    </form>
+                                                )}
+                                            </div>
+                                        )}
                                     </div>
                                 </div>
                             </Dialog.Panel>
