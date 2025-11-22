@@ -6,8 +6,9 @@ const auth = require('../middleware/auth');
 router.get('/', async (req, res) => {
     try {
         const events = await Event.find()
-            .populate('creator', 'firstName lastName username')
-            .populate('participants', 'firstName lastName username');
+            .populate('creator', 'firstName lastName username profilePicture')
+            .populate('participants', 'firstName lastName username profilePicture')
+            .populate('comments.user', 'firstName lastName username profilePicture');
         res.json(events);
     } catch (err) {
         res.status(500).json({ message: err.message });
@@ -33,6 +34,7 @@ router.post('/', auth, async (req, res) => {
         });
 
         const savedEvent = await newEvent.save();
+        await savedEvent.populate('creator', 'firstName lastName username profilePicture');
         res.status(201).json(savedEvent);
     } catch (err) {
         res.status(400).json({ message: err.message });

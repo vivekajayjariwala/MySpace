@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Tab } from '@headlessui/react';
 import { ChevronLeftIcon, ChevronRightIcon } from '@heroicons/react/24/outline';
 
@@ -7,6 +8,7 @@ function classNames(...classes) {
 }
 
 export default function EventsPanel({ events, userEvents, onEventClick, onEditEvent, onDeleteEvent, userLocation }) {
+    const navigate = useNavigate();
     const [isOpen, setIsOpen] = useState(true);
 
     // Sort events by distance if userLocation is available
@@ -24,7 +26,7 @@ export default function EventsPanel({ events, userEvents, onEventClick, onEditEv
                     <h2 className="text-2xl font-bold text-gray-800">Events</h2>
                 </div>
 
-                <Tab.Group>
+                <Tab.Group className="flex-1 min-h-0 flex flex-col">
                     <Tab.List className="flex space-x-1 rounded-2xl bg-gray-200/50 p-1 mx-4 mb-2">
                         <Tab
                             className={({ selected }) =>
@@ -53,7 +55,7 @@ export default function EventsPanel({ events, userEvents, onEventClick, onEditEv
                             My Events
                         </Tab>
                     </Tab.List>
-                    <Tab.Panels className="flex-1 overflow-y-auto px-4 pb-4 custom-scrollbar">
+                    <Tab.Panels className="flex-1 overflow-y-auto px-4 pb-4 custom-scrollbar min-h-0">
                         <Tab.Panel className="space-y-3 pt-2">
                             {sortedEvents.map((event) => (
                                 <div
@@ -70,6 +72,24 @@ export default function EventsPanel({ events, userEvents, onEventClick, onEditEv
                                             <p className="text-xs font-medium text-green-600 mt-0.5 uppercase tracking-wide">
                                                 {event.type}
                                             </p>
+                                            {event.creator && (
+                                                <div
+                                                    className="flex items-center gap-1 mt-1.5 text-xs text-gray-600 hover:text-green-600 transition-colors"
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        navigate(`/profile/${event.creator._id}`);
+                                                    }}
+                                                >
+                                                    <div className="w-4 h-4 rounded-full bg-green-100 flex items-center justify-center text-[8px] font-bold text-green-700 overflow-hidden">
+                                                        {event.creator.profilePicture ? (
+                                                            <img src={event.creator.profilePicture} alt={event.creator.firstName} className="w-full h-full object-cover" />
+                                                        ) : (
+                                                            `${event.creator.firstName[0]}${event.creator.lastName[0]}`
+                                                        )}
+                                                    </div>
+                                                    <span className="truncate">by {event.creator.firstName} {event.creator.lastName}</span>
+                                                </div>
+                                            )}
                                             <div className="flex items-center gap-1 mt-2 text-xs text-gray-500">
                                                 <span>🕒</span>
                                                 <span>{new Date(event.time).toLocaleDateString()}</span>

@@ -124,14 +124,24 @@ router.post("/change-password", auth, async (req, res) => {
     }
 });
 
-// Update user profile
+// Update user profile (enhanced with new fields)
 router.put("/profile", auth, async (req, res) => {
     try {
-        const { firstName, lastName } = req.body;
+        const { firstName, lastName, bio, interests, profilePicture, lookingFor, favoriteActivities, availability } = req.body;
+
+        const updateData = {};
+        if (firstName) updateData.firstName = firstName;
+        if (lastName) updateData.lastName = lastName;
+        if (bio !== undefined) updateData.bio = bio;
+        if (interests) updateData.interests = interests;
+        if (profilePicture !== undefined) updateData.profilePicture = profilePicture;
+        if (lookingFor !== undefined) updateData.lookingFor = lookingFor;
+        if (favoriteActivities) updateData.favoriteActivities = favoriteActivities;
+        if (availability !== undefined) updateData.availability = availability;
 
         const user = await User.findByIdAndUpdate(
             req.user._id,
-            { firstName, lastName },
+            updateData,
             { new: true }
         ).select('-password -verificationToken -verificationTokenExpires');
 
@@ -142,6 +152,142 @@ router.put("/profile", auth, async (req, res) => {
         res.send(user);
     } catch (error) {
         console.error('Profile update error:', error);
+        res.status(500).send({ message: "Internal Server Error" });
+    }
+});
+
+// Get public user profile
+router.get("/:userId", async (req, res) => {
+    try {
+        const user = await User.findById(req.params.userId)
+            .select('-password -verificationToken -verificationTokenExpires')
+            .populate('friends', 'firstName lastName username profilePicture')
+            .populate('friendRequests', 'firstName lastName username profilePicture')
+            .populate('sentFriendRequests', 'firstName lastName username profilePicture');
+
+        if (!user) {
+            return res.status(404).send({ message: "User not found" });
+        }
+
+        res.send(user);
+    } catch (error) {
+        console.error('Get user error:', error);
+        res.status(500).send({ message: "Internal Server Error" });
+    }
+});
+
+// Send friend request
+router.post("/friend-request/:userId", auth, async (req, res) => {
+    try {
+        const targetUserId = req.params.userId;
+        const currentUserId = req.user._id;
+
+        if (targetUserId === currentUserId.toString()) {
+            return res.status(400).send({ message: "Cannot send friend request to yourself" });
+        }
+
+        const targetUser = await User.findById(targetUserId);
+        if (!targetUser) {
+            return res.status(404).send({ message: "User not found" });
+        }
+
+        // Check if already friends
+        if (targetUser.friends.includes(currentUserId)) {
+            return res.status(400).send({ message: "Already friends" });
+        }
+
+        // Check if request already sent
+        if (targetUser.friendRequests.includes(currentUserId)) {
+            return res.status(400).send({ message: "Friend request already sent" });
+        }
+
+        // Add to friend requests
+        targetUser.friendRequests.push(currentUserId);
+        await targetUser.save();
+
+        // Add to sender's sentFriendRequests
+        const currentUser = await User.findById(currentUserId);
+        if (!currentUser.sentFriendRequests.includes(targetUserId)) {
+            currentUser.sentFriendRequests.push(targetUserId);
+            await currentUser.save();
+        }
+
+        res.send({ message: "Friend request sent" });
+    } catch (error) {
+        console.error('Friend request error:', error);
+        res.status(500).send({ message: "Internal Server Error" });
+    }
+});
+
+// Accept friend request
+router.post("/accept-friend/:userId", auth, async (req, res) => {
+    try {
+        const requesterId = req.params.userId;
+        const currentUserId = req.user._id;
+
+        const currentUser = await User.findById(currentUserId);
+        const requester = await User.findById(requesterId);
+
+        if (!requester) {
+            return res.status(404).send({ message: "User not found" });
+        }
+
+        // Check if friend request exists
+        if (!currentUser.friendRequests.includes(requesterId)) {
+            return res.status(400).send({ message: "No friend request from this user" });
+        }
+
+        // Add to friends list for both users
+        currentUser.friends.push(requesterId);
+        requester.friends.push(currentUserId);
+
+        // Remove from friend requests
+        currentUser.friendRequests = currentUser.friendRequests.filter(
+            id => id.toString() !== requesterId
+        );
+
+        // Remove from requester's sentFriendRequests
+        requester.sentFriendRequests = requester.sentFriendRequests.filter(
+            id => id.toString() !== currentUserId.toString()
+        );
+
+        await currentUser.save();
+        await requester.save();
+
+        res.send({ message: "Friend request accepted" });
+    } catch (error) {
+        console.error('Accept friend error:', error);
+        res.status(500).send({ message: "Internal Server Error" });
+    }
+});
+
+// Remove friend
+router.delete("/remove-friend/:userId", auth, async (req, res) => {
+    try {
+        const friendId = req.params.userId;
+        const currentUserId = req.user._id;
+
+        const currentUser = await User.findById(currentUserId);
+        const friend = await User.findById(friendId);
+
+        if (!friend) {
+            return res.status(404).send({ message: "User not found" });
+        }
+
+        // Remove from both users' friends lists
+        currentUser.friends = currentUser.friends.filter(
+            id => id.toString() !== friendId
+        );
+        friend.friends = friend.friends.filter(
+            id => id.toString() !== currentUserId.toString()
+        );
+
+        await currentUser.save();
+        await friend.save();
+
+        res.send({ message: "Friend removed" });
+    } catch (error) {
+        console.error('Remove friend error:', error);
         res.status(500).send({ message: "Internal Server Error" });
     }
 });

@@ -15,7 +15,17 @@ const userSchema = new mongoose.Schema({
     verificationToken: { type: String },
     verificationTokenExpires: { type: Date },
     followers: [{ type: mongoose.Schema.Types.ObjectId, ref: 'users' }],
-    following: [{ type: mongoose.Schema.Types.ObjectId, ref: 'users' }]
+    following: [{ type: mongoose.Schema.Types.ObjectId, ref: 'users' }],
+    // Enhanced Profile Fields
+    bio: { type: String, maxlength: 500, default: '' },
+    interests: [{ type: String, maxlength: 50 }],
+    profilePicture: { type: String, default: '' }, // base64 or URL
+    lookingFor: { type: String, default: '' }, // e.g., "friends", "activity partners"
+    favoriteActivities: [{ type: String, maxlength: 50 }],
+    availability: { type: String, default: '' }, // e.g., "weekends", "evenings"
+    friends: [{ type: mongoose.Schema.Types.ObjectId, ref: 'users' }],
+    friendRequests: [{ type: mongoose.Schema.Types.ObjectId, ref: 'users' }],
+    sentFriendRequests: [{ type: mongoose.Schema.Types.ObjectId, ref: 'users' }]
 })
 
 userSchema.methods.generateAuthToken = function () {
@@ -50,6 +60,13 @@ const validate = (data) => {
         username: joi.string().required().label("Username"),
         email: joi.string().email().required().label("Email"),
         password: passwordComplexity().required().label("Password"),
+        // Optional profile fields
+        bio: joi.string().max(500).allow('').optional(),
+        interests: joi.array().items(joi.string().max(50)).max(3).optional(),
+        profilePicture: joi.string().allow('').optional(),
+        lookingFor: joi.string().allow('').optional(),
+        favoriteActivities: joi.array().items(joi.string().max(50)).optional(),
+        availability: joi.string().allow('').optional(),
     });
     return schema.validate(data);
 }

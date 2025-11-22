@@ -8,6 +8,7 @@ import RegisterPage from './pages/RegisterPage';
 import MapPage from './pages/MapPage';
 import LandingPage from './pages/LandingPage';
 import ProfilePage from './pages/ProfilePage';
+import PublicProfilePage from './pages/PublicProfilePage';
 
 const PrivateRoute = ({ children }) => {
   const { user, loading } = useAuth();
@@ -52,6 +53,9 @@ function App() {
               <PrivateRoute>
                 <ProfilePage />
               </PrivateRoute>
+            } />
+            <Route path="/profile/:userId" element={
+              <PublicProfilePage />
             } />
           </Routes>
         </div>

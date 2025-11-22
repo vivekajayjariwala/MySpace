@@ -11,7 +11,7 @@ const eventRoutes = require('./routes/events')
 const socialRoutes = require('./routes/social')
 
 // middlewares
-app.use(express.json());
+app.use(express.json({ limit: '10mb' })); // Increased limit for profile pictures
 app.use(cors({
     origin: config.cors.origin
 }));
@@ -21,6 +21,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/social', socialRoutes);
+app.use('/api/ai', require('./routes/ai'));
 
 // Serving frontend code
 const path = require('path');

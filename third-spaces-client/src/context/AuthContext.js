@@ -1,5 +1,7 @@
 import { createContext, useContext, useState, useEffect } from 'react';
 import { jwtDecode } from 'jwt-decode';
+import axios from 'axios';
+import config from '../config/config';
 
 const AuthContext = createContext();
 
@@ -18,31 +20,57 @@ export function AuthProvider({ children }) {
             try {
                 const decoded = jwtDecode(token);
                 console.log('Decoded token:', decoded);
-                setUser({
-                    email: decoded.email,
-                    isAdmin: decoded.isAdmin,
-                    _id: decoded._id,
-                    firstName: decoded.firstName,
-                    lastName: decoded.lastName
-                });
+
+                // Fetch full user profile
+                const fetchUserProfile = async () => {
+                    try {
+                        const url = `${config.api.baseUrl}${config.api.endpoints.users}/${decoded._id}`;
+                        const { data } = await axios.get(url);
+                        setUser(data);
+                    } catch (error) {
+                        console.error('Error fetching user profile:', error);
+                        // Fallback to JWT data if profile fetch fails
+                        setUser({
+                            email: decoded.email,
+                            isAdmin: decoded.isAdmin,
+                            _id: decoded._id,
+                            firstName: decoded.firstName,
+                            lastName: decoded.lastName
+                        });
+                    }
+                    setLoading(false);
+                };
+
+                fetchUserProfile();
             } catch (error) {
                 console.error('Error decoding token:', error);
                 localStorage.removeItem('token');
+                setLoading(false);
             }
+        } else {
+            setLoading(false);
         }
-        setLoading(false);
     }, []);
 
-    const login = (token) => {
+    const login = async (token) => {
         localStorage.setItem('token', token);
         const decoded = jwtDecode(token);
-        setUser({
-            email: decoded.email,
-            isAdmin: decoded.isAdmin,
-            _id: decoded._id,
-            firstName: decoded.firstName,
-            lastName: decoded.lastName
-        });
+
+        try {
+            const url = `${config.api.baseUrl}${config.api.endpoints.users}/${decoded._id}`;
+            const { data } = await axios.get(url);
+            setUser(data);
+        } catch (error) {
+            console.error('Error fetching user profile during login:', error);
+            // Fallback to JWT data
+            setUser({
+                email: decoded.email,
+                isAdmin: decoded.isAdmin,
+                _id: decoded._id,
+                firstName: decoded.firstName,
+                lastName: decoded.lastName
+            });
+        }
     };
 
     const logout = () => {
@@ -52,12 +80,21 @@ export function AuthProvider({ children }) {
         setUser(null);
     };
 
+    const updateUser = (userData) => {
+        // Merge new user data with existing user state
+        setUser(prevUser => ({
+            ...prevUser,
+            ...userData
+        }));
+    };
+
     const isAuthenticated = !!user;
 
     const value = {
         user,
         login,
         logout,
+        updateUser,
         isAuthenticated,
         loading
     };
