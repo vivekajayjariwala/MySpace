@@ -1,0 +1,273 @@
+import React, { Fragment, useState } from 'react';
+import { Dialog, Transition, Listbox } from '@headlessui/react';
+import { XMarkIcon, ChevronUpDownIcon, CheckIcon } from '@heroicons/react/24/outline';
+import EmojiPicker from 'emoji-picker-react';
+
+const TYPE_OPTIONS = [
+    { name: 'Activity', emoji: '🏃' },
+    { name: 'Dining', emoji: '🍽️' },
+    { name: 'Blind Date', emoji: '💘' },
+    { name: 'Board Game', emoji: '🎲' },
+    { name: 'Birthday', emoji: '🎂' },
+    { name: 'Custom', emoji: '✨' },
+];
+
+export default function EventModal({ isOpen, onClose, location, onSubmit }) {
+    const [title, setTitle] = useState('');
+    const [selectedType, setSelectedType] = useState(TYPE_OPTIONS[0]);
+    const [customType, setCustomType] = useState('');
+    const [emoji, setEmoji] = useState('📍');
+    const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+    const [address, setAddress] = useState('');
+    const [description, setDescription] = useState('');
+    const [time, setTime] = useState('');
+    const [participantsLimit, setParticipantsLimit] = useState('');
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        onSubmit({
+            title,
+            type: selectedType.name === 'Custom' ? customType : selectedType.name,
+            emoji,
+            address,
+            description,
+            time,
+            participantsLimit: participantsLimit ? parseInt(participantsLimit) : undefined,
+            location
+        });
+        resetForm();
+    };
+
+    const resetForm = () => {
+        setTitle('');
+        setSelectedType(TYPE_OPTIONS[0]);
+        setCustomType('');
+        setEmoji('📍');
+        setAddress('');
+        setDescription('');
+        setTime('');
+        setParticipantsLimit('');
+    };
+
+    const handleTypeChange = (type) => {
+        setSelectedType(type);
+        if (type.name !== 'Custom') {
+            setEmoji(type.emoji);
+        }
+    };
+
+    return (
+        <Transition.Root show={isOpen} as={Fragment}>
+            <Dialog as="div" className="relative z-[2000]" onClose={onClose}>
+                <Transition.Child
+                    as={Fragment}
+                    enter="ease-out duration-300"
+                    enterFrom="opacity-0"
+                    enterTo="opacity-100"
+                    leave="ease-in duration-200"
+                    leaveFrom="opacity-100"
+                    leaveTo="opacity-0"
+                >
+                    <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity backdrop-blur-sm" />
+                </Transition.Child>
+
+                <div className="fixed inset-0 z-10 overflow-y-auto">
+                    <div className="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+                        <Transition.Child
+                            as={Fragment}
+                            enter="ease-out duration-300"
+                            enterFrom="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                            enterTo="opacity-100 translate-y-0 sm:scale-100"
+                            leave="ease-in duration-200"
+                            leaveFrom="opacity-100 translate-y-0 sm:scale-100"
+                            leaveTo="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+                        >
+                            <Dialog.Panel className="relative transform overflow-visible rounded-2xl bg-white px-4 pb-4 pt-5 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:p-6">
+                                <div className="absolute right-0 top-0 hidden pr-4 pt-4 sm:block">
+                                    <button
+                                        type="button"
+                                        className="rounded-md bg-white text-gray-400 hover:text-gray-500 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+                                        onClick={onClose}
+                                    >
+                                        <span className="sr-only">Close</span>
+                                        <XMarkIcon className="h-6 w-6" aria-hidden="true" />
+                                    </button>
+                                </div>
+
+                                <div className="sm:flex sm:items-start">
+                                    <div className="mt-3 text-center sm:mt-0 sm:text-left w-full">
+                                        <Dialog.Title as="h3" className="text-2xl font-semibold leading-6 text-gray-900 mb-6">
+                                            Create New Event
+                                        </Dialog.Title>
+
+                                        <form onSubmit={handleSubmit} className="space-y-5">
+                                            {/* Emoji & Title Row */}
+                                            <div className="flex gap-4">
+                                                <div className="relative">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                                                        className="h-[50px] w-[50px] flex items-center justify-center text-3xl bg-gray-50 rounded-xl border border-gray-200 hover:bg-gray-100"
+                                                    >
+                                                        {emoji}
+                                                    </button>
+                                                    {showEmojiPicker && (
+                                                        <div className="absolute top-14 left-0 z-50">
+                                                            <div className="fixed inset-0" onClick={() => setShowEmojiPicker(false)} />
+                                                            <div className="relative z-50">
+                                                                <EmojiPicker
+                                                                    onEmojiClick={(e) => {
+                                                                        setEmoji(e.emoji);
+                                                                        setShowEmojiPicker(false);
+                                                                    }}
+                                                                    width={300}
+                                                                    height={400}
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                                <div className="flex-1">
+                                                    <input
+                                                        type="text"
+                                                        required
+                                                        className="block w-full rounded-xl border-0 py-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-green-600 sm:text-sm sm:leading-6"
+                                                        placeholder="Event Title"
+                                                        value={title}
+                                                        onChange={(e) => setTitle(e.target.value)}
+                                                    />
+                                                </div>
+                                            </div>
+
+                                            {/* Type Dropdown */}
+                                            <div className="relative">
+                                                <Listbox value={selectedType} onChange={handleTypeChange}>
+                                                    <div className="relative mt-1">
+                                                        <Listbox.Button className="relative w-full cursor-default rounded-xl bg-white py-3 pl-3 pr-10 text-left shadow-sm ring-1 ring-inset ring-gray-300 focus:outline-none focus:ring-2 focus:ring-green-600 sm:text-sm sm:leading-6">
+                                                            <span className="block truncate">{selectedType.emoji} {selectedType.name}</span>
+                                                            <span className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
+                                                                <ChevronUpDownIcon className="h-5 w-5 text-gray-400" aria-hidden="true" />
+                                                            </span>
+                                                        </Listbox.Button>
+                                                        <Transition
+                                                            as={Fragment}
+                                                            leave="transition ease-in duration-100"
+                                                            leaveFrom="opacity-100"
+                                                            leaveTo="opacity-0"
+                                                        >
+                                                            <Listbox.Options className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm">
+                                                                {TYPE_OPTIONS.map((type, typeIdx) => (
+                                                                    <Listbox.Option
+                                                                        key={typeIdx}
+                                                                        className={({ active }) =>
+                                                                            `relative cursor-default select-none py-2 pl-10 pr-4 ${active ? 'bg-green-100 text-green-900' : 'text-gray-900'
+                                                                            }`
+                                                                        }
+                                                                        value={type}
+                                                                    >
+                                                                        {({ selected }) => (
+                                                                            <>
+                                                                                <span className={`block truncate ${selected ? 'font-medium' : 'font-normal'}`}>
+                                                                                    {type.emoji} {type.name}
+                                                                                </span>
+                                                                                {selected ? (
+                                                                                    <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-green-600">
+                                                                                        <CheckIcon className="h-5 w-5" aria-hidden="true" />
+                                                                                    </span>
+                                                                                ) : null}
+                                                                            </>
+                                                                        )}
+                                                                    </Listbox.Option>
+                                                                ))}
+                                                            </Listbox.Options>
+                                                        </Transition>
+                                                    </div>
+                                                </Listbox>
+                                            </div>
+
+                                            {/* Custom Type Input */}
+                                            {selectedType.name === 'Custom' && (
+                                                <div>
+                                                    <input
+                                                        type="text"
+                                                        required
+                                                        className="block w-full rounded-xl border-0 py-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-green-600 sm:text-sm sm:leading-6"
+                                                        placeholder="Enter custom event type..."
+                                                        value={customType}
+                                                        onChange={(e) => setCustomType(e.target.value)}
+                                                    />
+                                                </div>
+                                            )}
+
+                                            {/* Address */}
+                                            <div>
+                                                <input
+                                                    type="text"
+                                                    className="block w-full rounded-xl border-0 py-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-green-600 sm:text-sm sm:leading-6"
+                                                    placeholder="Address / Location Name (Optional)"
+                                                    value={address}
+                                                    onChange={(e) => setAddress(e.target.value)}
+                                                />
+                                            </div>
+
+                                            {/* Time */}
+                                            <div>
+                                                <input
+                                                    type="datetime-local"
+                                                    required
+                                                    className="block w-full rounded-xl border-0 py-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-green-600 sm:text-sm sm:leading-6"
+                                                    value={time}
+                                                    onChange={(e) => setTime(e.target.value)}
+                                                />
+                                            </div>
+
+                                            {/* Description */}
+                                            <div>
+                                                <textarea
+                                                    rows={3}
+                                                    className="block w-full rounded-xl border-0 py-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-green-600 sm:text-sm sm:leading-6"
+                                                    placeholder="Description..."
+                                                    value={description}
+                                                    onChange={(e) => setDescription(e.target.value)}
+                                                />
+                                            </div>
+
+                                            {/* Participants Limit */}
+                                            <div>
+                                                <input
+                                                    type="number"
+                                                    min="1"
+                                                    className="block w-full rounded-xl border-0 py-3 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-green-600 sm:text-sm sm:leading-6"
+                                                    placeholder="Participant Limit (Optional)"
+                                                    value={participantsLimit}
+                                                    onChange={(e) => setParticipantsLimit(e.target.value)}
+                                                />
+                                            </div>
+
+                                            {/* Submit Button */}
+                                            <div className="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse">
+                                                <button
+                                                    type="submit"
+                                                    className="inline-flex w-full justify-center rounded-xl bg-green-600 px-3 py-3 text-sm font-semibold text-white shadow-sm hover:bg-green-500 sm:ml-3 sm:w-auto"
+                                                >
+                                                    Create Event
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    className="mt-3 inline-flex w-full justify-center rounded-xl bg-white px-3 py-3 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto"
+                                                    onClick={onClose}
+                                                >
+                                                    Cancel
+                                                </button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </Dialog.Panel>
+                        </Transition.Child>
+                    </div>
+                </div>
+            </Dialog>
+        </Transition.Root>
+    );
+}

@@ -1,0 +1,16 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom styles to remove the Mapbox default popup appearance */
+.custom-event-popup .mapboxgl-popup-content {
+    background: none !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+}
+
+.custom-event-popup .mapboxgl-popup-tip {
+    border: none !important;
+    visibility: hidden;
+}
