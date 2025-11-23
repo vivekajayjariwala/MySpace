@@ -28,7 +28,7 @@ const path = require('path');
 app.use(express.static(path.join(__dirname, '../third-spaces-client/build')));
 
 // Import environment variables
-const MONGOURL = "mongodb+srv://vivekajayjariwala_db_user:Qf4KEqv3qt6qZ4jE@conventus-cluster.tnyf6lp.mongodb.net/conventus?appName=conventus-cluster";
+const MONGOURL = process.env.MONGOURL;
 
 // Establish connection to MongoDB database using mongoose
 mongoose.connect(MONGOURL)
