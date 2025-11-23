@@ -13,6 +13,7 @@ export default function MapPage() {
     const [newEventLocation, setNewEventLocation] = useState(null);
     const [editingEvent, setEditingEvent] = useState(null);
     const [focusedEvent, setFocusedEvent] = useState(null);
+    const [selectedCategory, setSelectedCategory] = useState('All');
     const { user } = useAuth();
 
     useEffect(() => {
@@ -121,21 +122,27 @@ export default function MapPage() {
         }
     };
 
+    const filteredEvents = selectedCategory === 'All'
+        ? events
+        : events.filter(event => event.type === selectedCategory);
+
     return (
         <div className="h-[calc(100vh-64px)] w-full relative bg-dashboard-bg p-4">
             <div className="relative w-full h-full rounded-3xl overflow-hidden shadow-lg ring-1 ring-black/5">
                 <EventsPanel
-                    events={events}
+                    events={filteredEvents}
                     userEvents={events.filter(e => e.creator._id === user?._id || e.creator === user?._id)}
                     onEventClick={handlePanelEventClick}
                     onEditEvent={handleEditEvent}
                     onDeleteEvent={handleDeleteEvent}
                     userLocation={null}
                     user={user}
+                    selectedCategory={selectedCategory}
+                    onCategoryChange={setSelectedCategory}
                 />
 
                 <Map
-                    events={events}
+                    events={filteredEvents}
                     onMapClick={handleMapClick}
                     onJoinEvent={handleJoinEvent}
                     onLeaveEvent={handleLeaveEvent}

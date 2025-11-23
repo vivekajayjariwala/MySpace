@@ -1,0 +1,16 @@
+export const TYPE_OPTIONS = [
+    { name: 'Sports', emoji: '⚽' },
+    { name: 'Video Games', emoji: '🎮' },
+    { name: 'Movies', emoji: '🎬' },
+    { name: 'Music', emoji: '🎵' },
+    { name: 'Food & Drinks', emoji: '🍽️' },
+    { name: 'Study/Work', emoji: '📚' },
+    { name: 'Outdoor', emoji: '🏞️' },
+    { name: 'Board Games', emoji: '🎲' },
+    { name: 'Party', emoji: '🎉' },
+    { name: 'Fitness', emoji: '💪' },
+    { name: 'Art & Crafts', emoji: '🎨' },
+    { name: 'Networking', emoji: '🤝' },
+    { name: 'Birthday', emoji: '🎂' },
+    { name: 'Custom', emoji: '✨' },
+];

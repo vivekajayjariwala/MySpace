@@ -31,7 +31,7 @@ router.post('/generate-event', async (req, res) => {
         const fullPrompt = `${systemInstruction}\n\nUser Prompt: ${prompt}`;
 
         const response = await ai.models.generateContent({
-            model: "gemini-2.0-flash-exp",
+            model: "gemini-2.5-flash-lite",
             contents: fullPrompt
         });
 
