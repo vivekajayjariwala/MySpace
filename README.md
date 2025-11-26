@@ -2,8 +2,8 @@
 
 MySpace is a web application, created for Hack Western 12, designed to help users discover and create "third spaces". Third spaces are social environments separate from the two usual social environments of home and the workplace for communities to connect and socialize. It features an interactive map to find events, user profiles, and social networking capabilities.
 
-**Demo Video:** https://youtu.be/wQ89IZsKpUA?si=nEGSBsapT2OAVIxx
-**DevPost:** https://devpost.com/software/myspace
+- **Demo Video:** https://youtu.be/wQ89IZsKpUA?si=nEGSBsapT2OAVIxx
+- **DevPost:** https://devpost.com/software/myspace
 
 ## Features
 
